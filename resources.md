@@ -27,7 +27,7 @@ When making a branch name, please follow the following convention:
 
 
 # Basic Git Workflow
-1. Clone the rwpository
+1. Clone the repository
 ```
 dbelliss$ git clone https://github.com/dbelliss/Starcraft2AI.git
 Cloning into 'Starcraft2AI'...
