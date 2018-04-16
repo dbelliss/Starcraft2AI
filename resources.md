@@ -97,7 +97,7 @@ To https://github.com/dbelliss/Starcraft2AI.git
 Branch 'features/test_branch' set up to track remote branch 'features/test_branch' from 'origin'.
 dbelliss$ 
 ```
-![](https://i.imgur.com/dFvNtPP.png)
+8. Make sure your push worked by checking the [network graph](https://github.com/dbelliss/Starcraft2AI/network)
 
 # How to make a merge request
 Once you are done with your branch and it's ready to be merged into master, make sure that you have no merge conflicts.
