@@ -111,7 +111,7 @@ For step 2, you can approve merge request that:
 2. Code passes the compilation test (Check out the branch yourself and compile it)
 
 If all looks good, you can press "Squash and merge".
-![](https://i.imgur.com/qqASDDi.png)
+![](https://i.imgur.com/Na3ZELm.png)
 
 # How to report an issue
 To be organized, we should track all our project issues in one place. Thus, to report an issue go to [issues section on our repo](https://github.com/dbelliss/Starcraft2AI/issues).
@@ -120,5 +120,6 @@ Here's a sample issue that I created:
 ![](https://i.imgur.com/1ipbFPw.png)
 
 # Credits
-Made by antonpup for ECS160WindowsTeam
-Modified by dbelliss for Starcraft2AI
+* Made by antonpup for ECS160WindowsTeam
+
+* Modified by dbelliss for Starcraft2AI
