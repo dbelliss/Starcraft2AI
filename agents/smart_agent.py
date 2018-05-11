@@ -10,9 +10,13 @@ from pysc2.lib import features
 
 _NO_OP = actions.FUNCTIONS.no_op.id
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
-_BUILD_SUPPLY_DEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
-_BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
-_TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
+_TRAIN_DRONE = actions.FUNCTIONS.Train_Drone_quick.id
+_TRAIN_ZERGLING = actions.FUNCTIONS.Train_Zergling_quick.id
+_TRAIN_ROACH = actions.FUNCTIONS.Train_Roach_quick.id
+_TRAIN_OVERLORD = actions.FUNCTIONS.Train_Overlord_quick.id
+_SELECT_LARVA = actions.FUNCTIONS.select_larva.id
+_BUILD_SPAWNING_POOL = actions.FUNCTIONS.Build_SpawningPool_screen.id
+_BUILD_ROACHWARREN = actions.FUNCTIONS.Build_RoachWarren_screen.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
 
@@ -27,25 +31,81 @@ _TERRAN_SCV = 45
 _TERRAN_SUPPLY_DEPOT = 19
 _TERRAN_BARRACKS = 21
 
+# Unit IDs
+HATCHERY = 86
+CREEP_TUMOR = 87
+EXTRACTOR = 88
+SPAWNING_POOL = 89
+EVOLUTION_CHAMBER = 90
+HYDRALISK_DEN = 91
+SPIRE = 92
+ULTRALISK_CAVERN = 93
+INFESTATION_PIT = 94
+NYDUS_NETWORK = 95
+BANELING_NEST = 96
+ROACH_WARREN = 97
+SPINE_CRAWLER = 98
+SPORE_CRAWLER = 99
+LAIR = 100
+HIVE = 101
+GREATER_SPIRE = 102
+EGG = 103
+DRONE = 104
+ZERGLING = 105
+OVERLORD = 106
+HYDRALISK = 107
+MUTALISK = 108
+ULTRALISK = 109
+ROACH = 110
+INFESTOR = 111
+CORRUPTOR = 112
+BROOD_LOAD_COCOON = 113
+BROOD_LORD = 114
+BANELING_BURROWED = 115
+DRONE_BURROWED = 116
+HYDRALISK_BURROWED = 117
+ROACH_BURROWED = 118
+ZERGLING_BURROWED = 119
+INFESTOR_TERRAN_BURROWED = 120
+QUEENBURROWED = 125
+QUEEN = 126
+INFESTOR_BURROWED = 127
+OVERLORD_COCOON = 128
+OVERSEER = 129
+LARVA = 151
+
+INFESTOR_TERRAN = 7
+BANELING_COCOON = 8
+BANELING = 9
+CHANGELING = 12
+CHANGELING_ZEALOT = 13
+CHANGELING_MARINE_SHIELD = 14
+CHANGELING_MARINE = 15
+CHANGELING_ZERGLING = 16
+
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
 ACTION_DO_NOTHING = 'donothing'
-ACTION_SELECT_SCV = 'selectscv'
-ACTION_BUILD_SUPPLY_DEPOT = 'buildsupplydepot'
-ACTION_BUILD_BARRACKS = 'buildbarracks'
-ACTION_SELECT_BARRACKS = 'selectbarracks'
-ACTION_BUILD_MARINE = 'buildmarine'
+ACTION_SELECT_LARVA = 'selectlarva'
+ACTION_SELECT_DRONE = 'selectdrone'
+ACTION_BUILD_SPAWNINGPOOL = 'buildspawningpool'
+ACTION_BUILD_ROACHWARREN = 'buildroackwarren'
+ACTION_TRAIN_OVERLORD = 'trainoverlord'
+ACTION_TRAIN_ZERGLING = 'trainzergling'
+ACTION_TRAIN_ROACH = 'trainroach'
 ACTION_SELECT_ARMY = 'selectarmy'
 ACTION_ATTACK = 'attack'
 
 smart_actions = [
     ACTION_DO_NOTHING,
-    ACTION_SELECT_SCV,
-    ACTION_BUILD_SUPPLY_DEPOT,
-    ACTION_BUILD_BARRACKS,
-    ACTION_SELECT_BARRACKS,
-    ACTION_BUILD_MARINE,
+    ACTION_SELECT_LARVA,
+    ACTION_SELECT_DRONE,
+    ACTION_BUILD_SPAWNINGPOOL,
+    ACTION_BUILD_ROACHWARREN,
+    ACTION_TRAIN_OVERLORD,
+    ACTION_TRAIN_ZERGLING,
+    ACTION_TRAIN_ROACH,
     ACTION_SELECT_ARMY,
     ACTION_ATTACK,
 ]
@@ -109,6 +169,11 @@ class SmartAgent(base_agent.BaseAgent):
         self.previous_action = None
         self.previous_state = None
 
+    
+    def ResetBeliefState(self):
+        self.previous_action = None
+
+
     def transformLocation(self, x, x_distance, y, y_distance):
         if not self.base_top_left:
             return [x - x_distance, y - y_distance]
@@ -117,17 +182,19 @@ class SmartAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(SmartAgent, self).step(obs)
-
         player_y, player_x = (obs.observation['minimap'][_PLAYER_RELATIVE] == _PLAYER_SELF).nonzero()
         self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
 
         unit_type = obs.observation['screen'][_UNIT_TYPE]
 
-        depot_y, depot_x = (unit_type == _TERRAN_SUPPLY_DEPOT).nonzero()
-        supply_depot_count = supply_depot_count = 1 if depot_y.any() else 0
+        overlord_y, overlord_x = (unit_type == OVERLORD).nonzero()
+        overlord_count = 1 if overlord_y.any() else 0
 
-        barracks_y, barracks_x = (unit_type == _TERRAN_BARRACKS).nonzero()
-        barracks_count = 1 if barracks_y.any() else 0
+        spawningpool_y, spawningpool_x = (unit_type == SPAWNING_POOL).nonzero()
+        spawningpool_count = 1 if spawningpool_y.any() else 0
+
+        roachwarren_y, roachwarren_x = (unit_type == ROACH_WARREN).nonzero()
+        roachwarren_count = 1 if roachwarren_y.any() else 0
 
         supply_limit = obs.observation['player'][4]
         army_supply = obs.observation['player'][5]
@@ -136,8 +203,9 @@ class SmartAgent(base_agent.BaseAgent):
         killed_building_score = obs.observation['score_cumulative'][6]
 
         current_state = [
-            supply_depot_count,
-            barracks_count,
+            overlord_count,
+            spawningpool_count,
+            roachwarren_count,
             supply_limit,
             army_supply,
         ]
@@ -164,9 +232,10 @@ class SmartAgent(base_agent.BaseAgent):
         if smart_action == ACTION_DO_NOTHING:
             return actions.FunctionCall(_NO_OP, [])
 
-        elif smart_action == ACTION_SELECT_SCV:
+        
+        elif smart_action == ACTION_SELECT_LARVA:
             unit_type = obs.observation['screen'][_UNIT_TYPE]
-            unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+            unit_y, unit_x = (unit_type == LARVA).nonzero()
 
             if unit_y.any():
                 i = random.randint(0, len(unit_y) - 1)
@@ -174,38 +243,63 @@ class SmartAgent(base_agent.BaseAgent):
 
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
 
-        elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-            if _BUILD_SUPPLY_DEPOT in obs.observation['available_actions']:
+        
+        elif smart_action == ACTION_SELECT_DRONE:
+            unit_type = obs.observation['screen'][_UNIT_TYPE]
+            unit_y, unit_x = (unit_type == DRONE).nonzero()
+
+            if unit_y.any():
+                i = random.randint(0, len(unit_y) - 1)
+                target = [unit_x[i], unit_y[i]]
+
+                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+
+
+
+        elif smart_action == ACTION_BUILD_SPAWNINGPOOL:
+            if _BUILD_SPAWNING_POOL in obs.observation['available_actions']:
                 unit_type = obs.observation['screen'][_UNIT_TYPE]
-                unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
-
-                if unit_y.any():
-                    target = self.transformLocation(int(unit_x.mean()), 0, int(unit_y.mean()), 20)
-
-                    return actions.FunctionCall(_BUILD_SUPPLY_DEPOT, [_NOT_QUEUED, target])
-
-        elif smart_action == ACTION_BUILD_BARRACKS:
-            if _BUILD_BARRACKS in obs.observation['available_actions']:
-                unit_type = obs.observation['screen'][_UNIT_TYPE]
-                unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+                unit_y, unit_x = (unit_type == DRONE).nonzero()
 
                 if unit_y.any():
                     target = self.transformLocation(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
 
-                    return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
+                    #crappy way of making sure building is in bounds
+                    target[0] = 0 if target[0] < 0 else target[0]
+                    target[1] = 0 if target[1] < 0 else target[1]
+                    target[0] = 63 if target[0] > 63 else target[0]
+                    target[1] = 63 if target[0] > 63 else target[1]
+                    return actions.FunctionCall(_BUILD_SPAWNING_POOL, [_NOT_QUEUED, target])
 
-        elif smart_action == ACTION_SELECT_BARRACKS:
-            unit_type = obs.observation['screen'][_UNIT_TYPE]
-            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
 
-            if unit_y.any():
-                target = [int(unit_x.mean()), int(unit_y.mean())]
+        elif smart_action == ACTION_BUILD_ROACHWARREN:
+            if _BUILD_ROACHWARREN in obs.observation['available_actions']:
+                unit_type = obs.observation['screen'][_UNIT_TYPE]
+                unit_y, unit_x = (unit_type == DRONE).nonzero()
 
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+                if unit_y.any():
+                    target = self.transformLocation(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
 
-        elif smart_action == ACTION_BUILD_MARINE:
-            if _TRAIN_MARINE in obs.observation['available_actions']:
-                return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
+                    #crappy way of making sure building is in bounds
+                    target[0] = 0 if target[0] < 0 else target[0]
+                    target[1] = 0 if target[1] < 0 else target[1]
+                    target[0] = 63 if target[0] > 63 else target[0]
+                    target[1] = 63 if target[0] > 63 else target[1]
+                    return actions.FunctionCall(_BUILD_ROACHWARREN, [_NOT_QUEUED, target])
+
+
+        elif smart_action == ACTION_TRAIN_OVERLORD:
+            if _TRAIN_OVERLORD in obs.observation['available_actions']:
+                return actions.FunctionCall(_TRAIN_OVERLORD, [_NOT_QUEUED])
+
+
+        elif smart_action == ACTION_TRAIN_ZERGLING:
+            if _TRAIN_ZERGLING in obs.observation['available_actions']:
+                return actions.FunctionCall(_TRAIN_ZERGLING, [_QUEUED])
+
+        elif smart_action == ACTION_TRAIN_ROACH:
+            if _TRAIN_ROACH in obs.observation['available_actions']:
+                return actions.FunctionCall(_TRAIN_ROACH, [_QUEUED])
 
         elif smart_action == ACTION_SELECT_ARMY:
             if _SELECT_ARMY in obs.observation['available_actions']:

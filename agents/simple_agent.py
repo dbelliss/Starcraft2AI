@@ -100,6 +100,11 @@ class SimpleAgent(base_agent.BaseAgent):
         
         return [x + x_distance, y + y_distance]
     
+    def ResetBeliefState(self):
+        self.larva_selected = False
+        self.drone_select = False
+        self.army_selected = False
+
     def step(self, obs):
         super(SimpleAgent, self).step(obs)
         
