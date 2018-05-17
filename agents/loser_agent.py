@@ -62,12 +62,12 @@ class LoserAgent(sc2.BotAI):
     @property
     def get_minerals(self):
         """Get the current amount of minerals"""
-        return self.mineral_contents
+        return self.minerals
 
     @property
     def get_vespene(self):
         """Get the current amount of vespene"""
-        return self.vespene_contents
+        return self.vespene
 
     @property
     def get_remaining_supply(self):
