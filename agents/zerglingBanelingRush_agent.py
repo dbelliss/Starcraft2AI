@@ -8,8 +8,6 @@ class ZerglingBanelingRushAgent(LoserAgent):
         self.overlord_counter = 0
         self.zergling_counter = 0
         self.baneling_counter = 0
-        self.attack_distance = 30
-        self.countdown = 0
         self.extractor_started = False
         self.hatchery_started = False
         self.spawning_pool_started = False
@@ -20,7 +18,6 @@ class ZerglingBanelingRushAgent(LoserAgent):
         self.mboost_started = False
         self.baneling_nest_started = False
         self.chooks_started = False
-        self.attacking = False
 
         # For debugging
         self.is_logging = is_logging  # Setting this to true to write information to log files in the agents/logs directory
@@ -83,7 +80,6 @@ class ZerglingBanelingRushAgent(LoserAgent):
 
         hatchery = self.mainAgent.units(HATCHERY).ready.first
         larvae = self.mainAgent.units(LARVA)
-        target = self.mainAgent.known_enemy_structures.random_or(self.mainAgent.enemy_start_locations[0]).position
 
         if iteration == 0:
             await self.mainAgent.do(larvae.random.train(DRONE))
@@ -139,7 +135,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
                 print("Hatchery Started")
                 print("Game Time: " + str(self.game_time))
 
-        if not self.extractor_started and not self.attacking:
+        if not self.extractor_started:
             if self.mainAgent.can_afford(EXTRACTOR) and self.mainAgent.workers.exists:
                 drone = self.mainAgent.workers.random
                 target = self.mainAgent.state.vespene_geyser.closest_to(drone.position)
