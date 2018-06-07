@@ -44,7 +44,7 @@ class AgentSelector(LoserAgent):
         print(bcolors.OKGREEN + "###AgentSelector Constructor" + bcolors.ENDC)
 
         # List of build orders
-        self.agents = [LoserAgent(), ZerglingBanelingRushAgent(), MutaliskAgent()]
+        self.agents = [ZerglingBanelingRushAgent(), MutaliskAgent()]
         self.nAgents = len(self.agents)
 
         # Choose RandomBuild

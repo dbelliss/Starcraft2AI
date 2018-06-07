@@ -89,7 +89,7 @@ class LoserAgent(sc2.BotAI):
             self.num_banelines_built = 0
             self.num_lurkers_built = 0
             self.num_ravagers_built = 0
-            self.num_num_mutalisks_built = 0
+            self.num_mutalisks_built = 0
             self.num_corrupters_built = 0
             self.num_brood_lords_built = 0
             self.num_swarm_hosts_built = 0
@@ -151,6 +151,7 @@ class LoserAgent(sc2.BotAI):
 
             # Saves army each iteration to prevent duplicate queries
             self.cached_army = None
+
     '''
     Base on_step function
     Uses basic_build and performs actions based on the current strategy
