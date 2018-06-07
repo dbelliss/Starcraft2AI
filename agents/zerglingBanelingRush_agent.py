@@ -64,7 +64,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
         # self.log("Step: " + str(iteration))
 
         # TEMP: Until strategy is given by Q table
-        # strategy_num = (int)(iteration / 75) % 8
+        strategy_num = (int)(iteration / 75) % 8
 
         # Build lings, queen, overlords, drones, and meleeattack1
         await self.basic_build(iteration)
@@ -191,21 +191,6 @@ class ZerglingBanelingRushAgent(LoserAgent):
                 if self.queen_started:
                     await self.mainAgent.do(larvae.random.train(ZERGLING))
                     self.zergling_counter += 1
-
-        # if self.zergling_counter >= 10:
-        #     if not self.attacking:
-        #         self.attacking = True
-        #         self.countdown = self.game_time
-        #
-        #     for unit in self.units(ZERGLING) | self.units(BANELING):
-        #         await self.do(unit.attack(target.to2.towards(self.game_info.map_center, self.attack_distance)))
-        #
-        #     #if self.baneling_counter != 0:
-        #     #    for worker in self.workers:
-        #     #        await self.do(worker.attack(target.to2.towards(self.game_info.map_center, 30)))
-
-        # if self.attacking:
-        #     self.attack_distance = 80 - (self.game_time - self.countdown)
 
         if not self.baneling_nest_started:
             if self.mainAgent.can_afford(BANELINGNEST) and self.mainAgent.units(SPAWNINGPOOL).ready.exists:
