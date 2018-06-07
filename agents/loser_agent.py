@@ -157,12 +157,12 @@ class LoserAgent(sc2.BotAI):
     For now, strategies will change ever 100 steps
     Harass strategies are not implemented yet
     '''
-    async def on_step(self, iteration, strategy_num=0):
+    async def on_step(self, iteration, strategy_num):
         # self.log("Step: %s Overlord: %s" % (str(iteration), str(self.mainAgent.units(OVERLORD).amount)))
         # self.log("Step: " + str(iteration))
 
         # TEMP: Until strategy is given by Q table
-        strategy_num = (int)(iteration / 75) % 12
+        #strategy_num = (int)(iteration / 75) % 12
 
         # Build lings, queen, overlords, drones, and meleeattack1
         await self.basic_build(iteration)

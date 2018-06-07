@@ -371,7 +371,7 @@ class AgentSelector(LoserAgent):
 
         # TODO
         # Call the current agent on_step
-        await self.agents[self.curAgentIndex].on_step(iteration)
+        await self.agents[self.curAgentIndex].on_step(iteration, self.strategiesIndex)
 
     def setupInputs(self):
         # Dry run through input creation to get idea of curInput size
