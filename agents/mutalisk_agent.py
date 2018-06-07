@@ -7,6 +7,7 @@ class MutaliskAgent(LoserAgent):
         self.num_drones_built = 0
         self.num_overlords_built = 0
         self.num_zerglings_built = 0
+        self.num_queens_built = 0
         self.num_lairs_built = 0
         self.num_hives_built = 0
         self.flyer_attack1 = 0
@@ -143,8 +144,7 @@ class MutaliskAgent(LoserAgent):
 
         if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL1) and self.flyer_attack1 == 0:
             sp = self.mainAgent.units(SPIRE).ready
-            abilities = await self.mainAgent.get_available_abilities(sp)
-            if sp.exists and AbilityID.RESEARCH_ZERGFLYERATTACKLEVEL1 in abilities:
+            if sp.exists:
                 err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL1))
                 if not err:
                     self.flyer_attack1 = 1
@@ -153,8 +153,7 @@ class MutaliskAgent(LoserAgent):
 
         if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL2) and self.flyer_attack1 + self.flyer_attack2 == 1:
             sp = self.mainAgent.units(SPIRE).ready
-            abilities = await self.mainAgent.get_available_abilities(sp)
-            if sp.exists and AbilityID.RESEARCH_ZERGFLYERATTACKLEVEL2 in abilities:
+            if sp.exists:
                 await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL2))
                 if not err:
                     self.flyer_attack2 = 1
@@ -164,15 +163,15 @@ class MutaliskAgent(LoserAgent):
         if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL3) and self.flyer_attack1 + self.flyer_attack2 + self.flyer_attack3 == 2:
             if self.mainAgent.units(HIVE).ready.exists:
                 sp = self.mainAgent.units(SPIRE).ready
-                abilities = await self.mainAgent.get_available_abilities(sp)
-                if sp.exists and AbilityID.RESEARCH_ZERGFLYERATTACKLEVEL3 in abilities:
+                if sp.exists:
+                    await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL2))
                     err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL3))
                     if not err:
                         self.flyer_attack3 = 1
                         # print("Researched Flying Attack Level 3")
                         # print("Game Time: " + str(self.game_time))
 
-        if self.mainAgent.units(LAIR).exists and self.flying_attack_level == 2 and not self.infestation_pit_started:
+        if self.mainAgent.units(LAIR).exists and self.flyer_attack1 + self.flyer_attack2 == 2 and not self.infestation_pit_started:
             if self.mainAgent.can_afford(INFESTATIONPIT):
                 pos = await self.mainAgent.get_next_expansion()
                 drone = self.mainAgent.workers.closest_to(pos)
