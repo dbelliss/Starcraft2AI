@@ -78,7 +78,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
 
     async def basic_build(self, iteration):
 
-        hatchery = self.mainAgent.units(HATCHERY).ready.first
+        firstbase = self.mainAgent.bases.ready.first
         larvae = self.mainAgent.units(LARVA)
 
         if iteration == 0:
@@ -153,7 +153,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
         elif not self.spawning_pool_started:
             if self.mainAgent.can_afford(SPAWNINGPOOL):
                 for d in range(4, 15):
-                    pos = hatchery.position.to2.towards(self.mainAgent.game_info.map_center, d)
+                    pos = firstbase.position.to2.towards(self.mainAgent.game_info.map_center, d)
                     if await self.mainAgent.can_place(SPAWNINGPOOL, pos):
                         drone = self.mainAgent.workers.closest_to(pos)
                         err = await self.mainAgent.do(drone.build(SPAWNINGPOOL, pos))
@@ -164,7 +164,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
 
         elif not self.queen_started and self.mainAgent.units(SPAWNINGPOOL).ready.exists:
             if self.mainAgent.can_afford(QUEEN):
-                err = await self.mainAgent.do(hatchery.train(QUEEN))
+                err = await self.mainAgent.do(firstbase.train(QUEEN))
                 if not err:
                     self.queen_started = True
                     print("Queen Started")
@@ -173,7 +173,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
         for queen in self.mainAgent.units(QUEEN).idle:
             abilities = await self.mainAgent.get_available_abilities(queen)
             if AbilityId.EFFECT_INJECTLARVA in abilities:
-                err = await self.mainAgent.do(queen(EFFECT_INJECTLARVA, hatchery))
+                err = await self.mainAgent.do(queen(EFFECT_INJECTLARVA, firstbase))
                 if not err:
                     print("Larva Injected")
                     print("Game Time: " + str(self.game_time))
@@ -195,7 +195,7 @@ class ZerglingBanelingRushAgent(LoserAgent):
         if not self.baneling_nest_started:
             if self.mainAgent.can_afford(BANELINGNEST) and self.mainAgent.units(SPAWNINGPOOL).ready.exists:
                 for d in range(4, 15):
-                    pos = hatchery.position.to2.towards(self.mainAgent.game_info.map_center, d)
+                    pos = firstbase.position.to2.towards(self.mainAgent.game_info.map_center, d)
                     if await self.mainAgent.can_place(BANELINGNEST, pos):
                         drone = self.mainAgent.workers.closest_to(pos)
                         err = await self.mainAgent.do(drone.build(BANELINGNEST, pos))
