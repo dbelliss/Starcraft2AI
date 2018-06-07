@@ -103,28 +103,24 @@ class MutaliskAgent(LoserAgent):
         if self.num_lairs_built < 1 and not self.mainAgent.already_pending(LAIR) \
                 and not self.lair_started and self.mainAgent.units(HATCHERY).amount > 0 and self.mainAgent.can_afford(UPGRADETOLAIR_LAIR) \
                 and self.mainAgent.can_afford(LAIR) and self.mainAgent.units(SPAWNINGPOOL).ready.exists:
-            hatchery = self.mainAgent.units(HATCHERY).first
-            abilities = await self.mainAgent.get_available_abilities(hatchery)
-            if AbilityID.UPGRADETOLAIR_LAIR in abilities:
-                err = await self.mainAgent.do(hatchery(UPGRADETOLAIR_LAIR))
-                if not err:
-                    self.mainAgent.num_lairs_built += 1
-                    self.lair_started = True
-                    #print("Upgraded to lair " + str(self.mainAgent.num_lairs_built))
-                    #print("Game Time: " + str(self.game_time))
+            hatchery = self.mainAgent.units(HATCHERY).ready.first
+            err = await self.mainAgent.do(hatchery(UPGRADETOLAIR_LAIR))
+            if not err:
+                self.mainAgent.num_lairs_built += 1
+                self.lair_started = True
+                #print("Upgraded to lair " + str(self.mainAgent.num_lairs_built))
+                #print("Game Time: " + str(self.game_time))
 
         if self.num_hives_built < 1 and not self.mainAgent.already_pending(HIVE) \
                 and not self.hive_started and self.mainAgent.units(LAIR).amount > 0 and self.mainAgent.can_afford(UPGRADETOHIVE_HIVE) \
                 and self.mainAgent.can_afford(HIVE) and self.mainAgent.units(INFESTATIONPIT).ready.exists:
-            lair = self.mainAgent.units(LAIR).first
-            abilities = await self.mainAgent.get_available_abilities(lair)
-            if AbilityID.UPGRADETOHIVE_HIVE in abilities:
-                err = await self.mainAgent.do(lair(UPGRADETOHIVE_HIVE))
-                if not err:
-                    self.mainAgent.num_hives_built += 1
-                    self.hive_started = True
-                    #print("Upgraded to hive " + str(self.mainAgent.num_hives_built))
-                        #print("Game Time: " + str(self.game_time))
+            lair = self.mainAgent.units(LAIR).ready.first
+            err = await self.mainAgent.do(lair(UPGRADETOHIVE_HIVE))
+            if not err:
+                self.mainAgent.num_hives_built += 1
+                self.hive_started = True
+                #print("Upgraded to hive " + str(self.mainAgent.num_hives_built))
+                    #print("Game Time: " + str(self.game_time))
 
         if self.game_time > 60 and not self.hatchery_started and self.mainAgent.can_afford(HATCHERY):
             pos = await self.mainAgent.get_next_expansion()
