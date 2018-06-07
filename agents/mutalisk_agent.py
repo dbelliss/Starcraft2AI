@@ -7,8 +7,11 @@ class MutaliskAgent(LoserAgent):
         self.drone_counter = 0
         self.overlord_counter = 0
         self.zergling_counter = 0
-        self.extractor_started = False
+        self.num_lairs_built = 0
+        self.num_queens = 0
         self.hatchery_started = False
+        self.lair_started = False
+        self.extractor_started = False
         self.spawning_pool_started = False
         self.moved_workers_to_gas = False
         self.moved_workers_from_gas = False
@@ -75,7 +78,7 @@ class MutaliskAgent(LoserAgent):
 
     async def basic_build(self, iteration):
 
-        firstbase = self.mainAgent.units(HATCHERY).ready.first
+        firstbase = self.mainAgent.bases.ready.first
         larvae = self.mainAgent.units(LARVA)
 
         if iteration == 0:
@@ -83,18 +86,28 @@ class MutaliskAgent(LoserAgent):
             self.drone_counter += 1
             print("Drone " + str(self.drone_counter))
 
-        if self.game_time > 75 and self.mainAgent.workers.exists:
+        for idle_worker in self.mainAgent.workers.idle:
+            mf = self.mainAgent.state.mineral_field.closest_to(idle_worker)
+            await self.mainAgent.do(idle_worker.gather(mf))
+
+        if self.game_time > 75 and self.mainAgent.workers.exists and \
+                self.mainAgent.units(EXTRACTOR).amount < 2 * self.mainAgent.bases.amount:
             for extractor in self.mainAgent.units(EXTRACTOR):
                 if extractor.assigned_harvesters < extractor.ideal_harvesters and self.mainAgent.workers.exists:
                     await self.mainAgent.do(self.mainAgent.workers.random.gather(extractor))
 
-        if self.supply_left <= 2 and larvae.exists and self.mainAgent.can_afford(OVERLORD):
-            await self.mainAgent.do(larvae.random.train(OVERLORD))
-            self.overlord_counter += 1
-            print ("Overlord " + str(self.overlord_counter))
+        if self.mainAgent.supply_left <= 2 and larvae.exists and self.mainAgent.can_afford(OVERLORD) \
+                and not self.mainAgent.already_pending(OVERLORD):
+            err = await self.mainAgent.do(larvae.random.train(OVERLORD))
+            if not err:
+                self.overlord_counter += 1
+                print ("Overlord " + str(self.overlord_counter))
 
-        if self.extractors < (self.mainAgent.units(HATCHERY).amount + self.mainAgent.units(LAIR).amount +
-                              self.mainAgent.units(HIVE).amount) * 2:
+        if self.mainAgent.workers.amount + self.mainAgent.already_pending(DRONE) < 24 * self.mainAgent.bases.amount:
+            if larvae.exists and self.mainAgent.can_afford(DRONE) and self.mainAgent.supply_left >= 1:
+                await self.mainAgent.do(larvae.random.train(DRONE))
+
+        if self.mainAgent.units(EXTRACTOR).ready.amount < (self.mainAgent.bases.amount) * 2:
             if self.mainAgent.can_afford(EXTRACTOR) and self.mainAgent.workers.exists:
                 drone = self.mainAgent.workers.random
                 target = self.mainAgent.state.vespene_geyser.closest_to(drone.position)
@@ -104,10 +117,10 @@ class MutaliskAgent(LoserAgent):
                     print("Extractor Started")
                     print("Game Time: " + str(self.game_time))
 
-        elif not self.spawning_pool_started:
+        if not self.mainAgent.units(SPAWNINGPOOL).ready.exists and not self.mainAgent.already_pending(SPAWNINGPOOL):
             if self.mainAgent.can_afford(SPAWNINGPOOL):
                 for d in range(4, 15):
-                    pos = hatchery.position.to2.towards(self.mainAgent.game_info.map_center, d)
+                    pos = firstbase.position.to2.towards(self.mainAgent.game_info.map_center, d)
                     if await self.mainAgent.can_place(SPAWNINGPOOL, pos):
                         drone = self.mainAgent.workers.closest_to(pos)
                         err = await self.mainAgent.do(drone.build(SPAWNINGPOOL, pos))
@@ -116,18 +129,62 @@ class MutaliskAgent(LoserAgent):
                             print("Spawning pool started")
                             break
 
-        elif not self.queen_started and self.mainAgent.units(SPIRE).ready.exists:
-            if self.mainAgent.can_afford(QUEEN):
-                err = await self.mainAgent.do(hatchery.train(QUEEN))
+        if self.mainAgent.units(SPAWNINGPOOL).ready.exists and self.mainAgent.minerals > 300:
+            if larvae.exists and self.mainAgent.can_afford(ZERGLING) and self.mainAgent.supply_left >= 1:
+                if self.queen_started and self.mainAgent.units(MUTALISK).ready.exists:
+                    await self.mainAgent.do(larvae.random.train(ZERGLING))
+                    self.zergling_counter += 1
+
+        if self.num_lairs_built < 1 and not self.mainAgent.already_pending(LAIR) \
+                and not self.lair_started and self.mainAgent.units(HATCHERY).amount > 0 and self.mainAgent.can_afford(UPGRADETOLAIR_LAIR) \
+                and self.mainAgent.can_afford(LAIR) and self.mainAgent.units(SPAWNINGPOOL).ready.exists:
+            hatchery = self.mainAgent.units(HATCHERY).first
+            err = await self.mainAgent.do(hatchery(UPGRADETOLAIR_LAIR))
+            if not err:
+                self.mainAgent.num_lairs_built += 1
+                self.lair_started = True
+                print("Upgraded to lair " + str(self.mainAgent.num_lairs_built))
+                print("Game Time: " + str(self.game_time))
+
+        if self.game_time > 60 and not self.hatchery_started and self.mainAgent.can_afford(HATCHERY):
+            pos = await self.mainAgent.get_next_expansion()
+            drone = self.mainAgent.workers.closest_to(pos)
+            err = await self.mainAgent.build(HATCHERY, near=pos, max_distance=20, unit=drone)
+            if not err:
+                self.hatchery_started = True
+                print("Hatchery Started")
+                print("Game Time: " + str(self.game_time))
+
+        if self.hatchery_started and not self.mainAgent.units(SPIRE).ready.exists and not self.mainAgent.already_pending(SPIRE):
+            if self.mainAgent.can_afford(SPIRE):
+                pos = await self.mainAgent.get_next_expansion()
+                drone = self.mainAgent.workers.closest_to(pos)
+                err = await self.mainAgent.build(SPIRE, near=pos, max_distance=20, unit=drone)
                 if not err:
-                    self.queen_started = True
+                    self.spire_started = True
+                    print("Spire started")
+                    print("Game Time: " + str(self.game_time))
+
+        if self.num_queens < 2 and \
+                (self.mainAgent.units(SPIRE).ready.exists or self.mainAgent.units(GREATERSPIRE).ready.exists):
+            if self.mainAgent.can_afford(QUEEN):
+                err = await self.mainAgent.do(firstbase.train(QUEEN))
+                if not err:
+                    self.num_queens += 1
                     print("Queen Started")
                     print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.units(QUEEN).amount + self.mainAgent.already_pending(QUEEN) >= 2 and self.mainAgent.supply_left > 2 and \
+            self.mainAgent.units(SPIRE).ready.exists and self.mainAgent.can_afford(MUTALISK) and larvae.exists:
+            err = await self.mainAgent.do(larvae.random.train(MUTALISK))
+            if not err:
+                print("Training Mutalisk")
+                print("Game Time: " + str(self.game_time))
 
         for queen in self.mainAgent.units(QUEEN).idle:
             abilities = await self.mainAgent.get_available_abilities(queen)
             if AbilityId.EFFECT_INJECTLARVA in abilities:
-                err = await self.mainAgent.do(queen(EFFECT_INJECTLARVA, hatchery))
+                err = await self.mainAgent.do(queen(EFFECT_INJECTLARVA, firstbase))
                 if not err:
                     print("Larva Injected")
                     print("Game Time: " + str(self.game_time))
@@ -135,7 +192,7 @@ class MutaliskAgent(LoserAgent):
 def main():
     # Start game with LoserAgent as the Bot, and begin logging
     sc2.run_game(sc2.maps.get("Abyssal Reef LE"), [
-        Bot(Race.Zerg, ZerglingBanelingRushAgent(True)),
+        Bot(Race.Zerg, MutaliskAgent(True)),
         Computer(Race.Protoss, Difficulty.Medium)
     ], realtime=False)
 

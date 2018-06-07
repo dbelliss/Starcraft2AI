@@ -19,6 +19,7 @@ from sc2.player import Bot, Computer
 from loser_agent import *
 from saferoach_agent import SafeRoachAgent
 from zerglingBanelingRush_agent import ZerglingBanelingRushAgent
+from mutalisk_agent import MutaliskAgent
 from NeuralNetwork import NeuralNetwork
 from strategies import Strategies
 
@@ -43,7 +44,7 @@ class AgentSelector(LoserAgent):
         print(bcolors.OKGREEN + "###AgentSelector Constructor" + bcolors.ENDC)
 
         # List of build orders
-        self.agents = [ZerglingBanelingRushAgent(), LoserAgent()]
+        self.agents = [MutaliskAgent()]
         self.nAgents = len(self.agents)
 
         # Choose RandomBuild

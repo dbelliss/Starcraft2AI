@@ -86,12 +86,17 @@ class ZerglingBanelingRushAgent(LoserAgent):
             self.drone_counter += 1
             print("Drone " + str(self.drone_counter))
 
+        for idle_worker in self.mainAgent.workers.idle:
+            mf = self.mainAgent.state.mineral_field.closest_to(idle_worker)
+            await self.mainAgent.do(idle_worker.gather(mf))
+
         if self.game_time > 75 and self.mainAgent.workers.exists:
             for extractor in self.mainAgent.units(EXTRACTOR):
                 if extractor.assigned_harvesters < extractor.ideal_harvesters and self.mainAgent.workers.exists:
                     await self.mainAgent.do(self.mainAgent.workers.random.gather(extractor))
 
-        if self.overlord_counter == 0 and larvae.exists and self.mainAgent.can_afford(OVERLORD):
+        if self.overlord_counter == 0 and larvae.exists and self.mainAgent.can_afford(OVERLORD)\
+                and not self.mainAgent.already_pending(OVERLORD):
             await self.mainAgent.do(larvae.random.train(OVERLORD))
             self.overlord_counter += 1
             print ("Overlord " + str(self.overlord_counter))
