@@ -131,7 +131,7 @@ class MutaliskAgent(LoserAgent):
 
         if self.mainAgent.units(SPAWNINGPOOL).ready.exists and self.mainAgent.minerals > 300:
             if larvae.exists and self.mainAgent.can_afford(ZERGLING) and self.mainAgent.supply_left >= 1:
-                if self.queen_started and self.mainAgent.units(MUTALISK).ready.exists:
+                if not self.mainAgent.units(MUTALISK).ready.exists:
                     await self.mainAgent.do(larvae.random.train(ZERGLING))
                     self.zergling_counter += 1
 
@@ -171,6 +171,7 @@ class MutaliskAgent(LoserAgent):
                 err = await self.mainAgent.do(firstbase.train(QUEEN))
                 if not err:
                     self.num_queens += 1
+                    self.queen_started = True
                     print("Queen Started")
                     print("Game Time: " + str(self.game_time))
 
