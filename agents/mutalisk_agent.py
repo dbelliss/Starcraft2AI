@@ -8,11 +8,15 @@ class MutaliskAgent(LoserAgent):
         self.overlord_counter = 0
         self.zergling_counter = 0
         self.num_lairs_built = 0
+        self.num_hives_built = 0
         self.num_queens = 0
+        self.flying_attack_level = 0
         self.hatchery_started = False
         self.lair_started = False
+        self.hive_started = False
         self.extractor_started = False
         self.spawning_pool_started = False
+        self.infestation_pit_started = False
         self.moved_workers_to_gas = False
         self.moved_workers_from_gas = False
         self.moved_worker_to_expand = False
@@ -107,7 +111,7 @@ class MutaliskAgent(LoserAgent):
             if larvae.exists and self.mainAgent.can_afford(DRONE) and self.mainAgent.supply_left >= 1:
                 await self.mainAgent.do(larvae.random.train(DRONE))
 
-        if self.mainAgent.units(EXTRACTOR).ready.amount < (self.mainAgent.bases.amount) * 2:
+        if self.mainAgent.units(EXTRACTOR).ready.amount < (self.mainAgent.bases.ready.amount) * 2:
             if self.mainAgent.can_afford(EXTRACTOR) and self.mainAgent.workers.exists:
                 drone = self.mainAgent.workers.random
                 target = self.mainAgent.state.vespene_geyser.closest_to(drone.position)
@@ -130,8 +134,8 @@ class MutaliskAgent(LoserAgent):
                             break
 
         if self.mainAgent.units(SPAWNINGPOOL).ready.exists and self.mainAgent.minerals > 300:
-            if larvae.exists and self.mainAgent.can_afford(ZERGLING) and self.mainAgent.supply_left >= 1:
-                if not self.mainAgent.units(MUTALISK).ready.exists:
+            if larvae.exists and self.mainAgent.can_afford(ZERGLING) and self.mainAgent.supply_left >= 2:
+                if not self.mainAgent.units(MUTALISK).ready.exists or self.mainAgent.minerals > 500:
                     await self.mainAgent.do(larvae.random.train(ZERGLING))
                     self.zergling_counter += 1
 
@@ -144,6 +148,17 @@ class MutaliskAgent(LoserAgent):
                 self.mainAgent.num_lairs_built += 1
                 self.lair_started = True
                 print("Upgraded to lair " + str(self.mainAgent.num_lairs_built))
+                print("Game Time: " + str(self.game_time))
+
+        if self.num_hives_built < 1 and not self.mainAgent.already_pending(HIVE) \
+                and not self.hive_started and self.mainAgent.units(LAIR).amount > 0 and self.mainAgent.can_afford(UPGRADETOHIVE_HIVE) \
+                and self.mainAgent.can_afford(HIVE) and self.mainAgent.units(INFESTATIONPIT).ready.exists:
+            lair = self.mainAgent.units(LAIR).first
+            err = await self.mainAgent.do(lair(UPGRADETOHIVE_HIVE))
+            if not err:
+                self.mainAgent.num_hives_built += 1
+                self.hive_started = True
+                print("Upgraded to hive " + str(self.mainAgent.num_hives_built))
                 print("Game Time: " + str(self.game_time))
 
         if self.game_time > 60 and not self.hatchery_started and self.mainAgent.can_afford(HATCHERY):
@@ -163,6 +178,44 @@ class MutaliskAgent(LoserAgent):
                 if not err:
                     self.spire_started = True
                     print("Spire started")
+                    print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL1) and self.flying_attack_level == 0:
+            sp = self.mainAgent.units(SPIRE).ready
+            if sp.exists:
+                err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL1))
+                if not err:
+                    self.flying_attack_level += 1
+                    print("Researched Flying Attack Level 1")
+                    print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL2) and self.flying_attack_level == 1:
+            sp = self.mainAgent.units(SPIRE).ready
+            if sp.exists:
+                err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL2))
+                if not err:
+                    self.flying_attack_level += 1
+                    print("Researched Flying Attack Level 2")
+                    print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL3) and self.flying_attack_level == 2:
+            if self.mainAgent.units(HIVE).ready.exists:
+                sp = self.mainAgent.units(SPIRE).ready
+                if sp.exists:
+                    err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL3))
+                    if not err:
+                        self.flying_attack_level += 1
+                        print("Researched Flying Attack Level 3")
+                        print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.units(LAIR).exists and self.flying_attack_level == 2 and not self.infestation_pit_started:
+            if self.mainAgent.can_afford(INFESTATIONPIT):
+                pos = await self.mainAgent.get_next_expansion()
+                drone = self.mainAgent.workers.closest_to(pos)
+                err = await self.mainAgent.build(INFESTATIONPIT, near=pos, max_distance=20, unit=drone)
+                if not err:
+                    self.infestation_pit_started = True
+                    print("Infestation Pit started")
                     print("Game Time: " + str(self.game_time))
 
         if self.num_queens < 2 and \
