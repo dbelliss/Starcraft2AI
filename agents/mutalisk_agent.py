@@ -13,6 +13,9 @@ class MutaliskAgent(LoserAgent):
         self.flyer_attack1 = 0
         self.flyer_attack2 = 0
         self.flyer_attack3 = 0
+        self.flyer_armor1 = 0
+        self.flyer_armor2 = 0
+        self.flyer_armor3 = 0
         self.hatchery_started = False
         self.lair_started = False
         self.hive_started = False
@@ -151,6 +154,15 @@ class MutaliskAgent(LoserAgent):
                     # print("Researched Flying Attack Level 1")
                     # print("Game Time: " + str(self.game_time))
 
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERARMORLEVEL1) and self.flyer_armor1 == 0:
+            sp = self.mainAgent.units(SPIRE).ready
+            if sp.exists:
+                err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERARMORLEVEL1))
+                if not err:
+                    self.flyer_armor1 = 1
+                    # print("Researched Flying Attack Level 1")
+                    # print("Game Time: " + str(self.game_time))
+
         if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL2) and self.flyer_attack1 + self.flyer_attack2 == 1:
             sp = self.mainAgent.units(SPIRE).ready
             if sp.exists:
@@ -160,14 +172,32 @@ class MutaliskAgent(LoserAgent):
                     # print("Researched Flying Attack Level 2")
                     # print("Game Time: " + str(self.game_time))
 
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERARMORLEVEL2) and self.flyer_armor1 + self.flyer_armor2 == 1:
+            sp = self.mainAgent.units(SPIRE).ready
+            if sp.exists:
+                await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERARMORLEVEL2))
+                if not err:
+                    self.flyer_armor2 = 1
+                    # print("Researched Flying Attack Level 2")
+                    # print("Game Time: " + str(self.game_time))
+
         if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERATTACKLEVEL3) and self.flyer_attack1 + self.flyer_attack2 + self.flyer_attack3 == 2:
             if self.mainAgent.units(HIVE).ready.exists:
                 sp = self.mainAgent.units(SPIRE).ready
                 if sp.exists:
-                    await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL2))
                     err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERATTACKLEVEL3))
                     if not err:
                         self.flyer_attack3 = 1
+                        # print("Researched Flying Attack Level 3")
+                        # print("Game Time: " + str(self.game_time))
+
+        if self.mainAgent.can_afford(AbilityId.RESEARCH_ZERGFLYERARMORLEVEL3) and self.flyer_armor1 + self.flyer_armor2 + self.flyer_armor3 == 2:
+            if self.mainAgent.units(HIVE).ready.exists:
+                sp = self.mainAgent.units(SPIRE).ready
+                if sp.exists:
+                    err = await self.mainAgent.do(sp.first(RESEARCH_ZERGFLYERARMORLEVEL3))
+                    if not err:
+                        self.flyer_armor3 = 1
                         # print("Researched Flying Attack Level 3")
                         # print("Game Time: " + str(self.game_time))
 
